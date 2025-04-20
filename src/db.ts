@@ -21,21 +21,23 @@ const ContentSchema = new Schema({
   userId: { type: mongoose.Types.ObjectId, ref: "user" ,require:true },
 });
 
+
+export const Contenmodel = mongoose.model("content", ContentSchema);
+
 // const Tags = new Schema({
 //   id: ObjectId,
 //   title: String,
 // });
 
-// const Links = new Schema({
-//   id: ObjectId,
-//   userId: { type: Schema.Types.ObjectId, ref: "UserSchema" },
-// });
 
-
-export const Contenmodel = mongoose.model("content", ContentSchema);
 // const Tagsmodel = mongoose.model("tags", Tags);
 
-// const Linksmodel = mongoose.model("links", Links);
+const Links = new Schema({
+  hash:String,
+  userId: { type: Schema.Types.ObjectId, ref: "user",unique:true},
+});
+
+ export const Linksmodel = mongoose.model("links", Links);
 
 
 //  module.exports = {

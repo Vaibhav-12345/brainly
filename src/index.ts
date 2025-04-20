@@ -1,11 +1,12 @@
 import express from "express";
 import mongoose from "mongoose";
-import { Contenmodel, Usermodel } from "./db";
+import { Contenmodel, Linksmodel, Usermodel } from "./db";
 // import z from "zod";
 // import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config";
 import { userMiddelware } from "./middelware";
+import { random } from "./utils";
 
 const app = express();
 
@@ -159,7 +160,7 @@ app.get("/api/v1/content", userMiddelware, async(req, res) => {
 });
 
 app.delete('/api/v1/content',userMiddelware,async(req,res)=>{
-  // @ts-ignore 
+  
 
   const contentId=req.body.contentId
 
@@ -175,9 +176,87 @@ app.delete('/api/v1/content',userMiddelware,async(req,res)=>{
   
 })
 
-app.post("/api/v1/brain/share", (req, res) => {});
+app.post("/api/v1/brain/share",userMiddelware, async(req, res) => {
+  const share=req.body.share;
+  // share ki value true hogi then generate the shareble link 
+  if(share){
+   
+    const existingLink=await Linksmodel.findOne({
+      // @ts-ignore 
+      userId:req.userId
+    })
 
-app.get("/api/v1/brain/:shareLink", (req, res) => {});
+    if(existingLink){
+      res.json({
+        hash:existingLink.hash
+      })
+      return 
+    }
+
+
+    const hash=random(10);
+   await Linksmodel.create({
+      hash:hash,
+      // @ts-ignore 
+      userId:req.userId
+    })
+
+    res.json({
+      hash
+    })
+  }
+  else{
+     await Linksmodel.deleteOne({
+       // @ts-ignore 
+      userId:req.userId 
+     })
+
+     res.json({
+      message:'Remove sharable link'
+    })
+  } 
+
+  
+
+});
+
+app.get("/api/v1/brain/:shareLink", async(req, res) => {
+  const hash=req.params.shareLink;
+  
+  const link=await Linksmodel.findOne({
+    hash:hash
+  })
+  
+  if(!link){
+    res.status(403).json({
+      message:'sorry incorrect input means hash random string are generated '
+    })
+    return;
+  }
+  //userId
+  const content = await Contenmodel.find({
+    userId:link.userId
+  })
+  
+  const users=await Usermodel.findOne({
+    _id:link.userId
+  })
+
+
+  if(!users){
+    res.status(403).json({
+      message:'user not found ,error should ideall not happen '
+    })
+    return;
+  }
+
+
+  res.json({
+    username:users.username ,
+    content:content
+  })
+
+});
 
 async function main() {
   await mongoose.connect(
